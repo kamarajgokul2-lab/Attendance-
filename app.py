@@ -2,12 +2,13 @@ import streamlit as st
 import pandas as pd
 import google.generativeai as genai
 import plotly.express as px
+import os
 
 # =====================================================
 # GEMINI API KEY
 # =====================================================
 
-GEMINI_API_KEY = "AQ.Ab8RN6IcBeRCgc9wFdvZ38zgqfwSldBNZCghxjs8AS2gCSGfWA"
+GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"
 
 genai.configure(api_key=GEMINI_API_KEY)
 
@@ -16,7 +17,7 @@ genai.configure(api_key=GEMINI_API_KEY)
 # =====================================================
 
 st.set_page_config(
-    page_title="AI Attendance System",
+    page_title="AI Attendance Management System",
     page_icon="🎓",
     layout="wide"
 )
@@ -37,12 +38,6 @@ st.markdown("""
     color:#003366;
 }
 
-.metric-box{
-    padding:10px;
-    border-radius:10px;
-    background:#ffffff;
-}
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -56,7 +51,7 @@ st.markdown(
 )
 
 st.markdown(
-    "<center><h4>Smart Attendance Analytics using Gemini AI</h4></center>",
+    "<h4 style='text-align:center;'>Powered by Gemini AI</h4>",
     unsafe_allow_html=True
 )
 
@@ -66,36 +61,95 @@ st.markdown(
 
 with st.sidebar:
 
-    st.header("📌 How to Use")
+    st.header("📌 Features")
 
     st.markdown("""
-    1. Upload Attendance File
+    ✅ Daily Attendance Entry
 
-    2. AI calculates attendance
+    ✅ Upload Attendance Excel
 
-    3. Detects risk students
+    ✅ Attendance Dashboard
 
-    4. Generates smart reports
+    ✅ Risk Student Detection
 
-    5. Faculty receives recommendations
+    ✅ AI Parent Alert Generator
 
-    6. AI suggests intervention plans
+    ✅ AttendanceGPT Chatbot
+
+    ✅ AI Attendance Report
     """)
+
+# =====================================================
+# DAILY ATTENDANCE ENTRY
+# =====================================================
+
+st.subheader("📝 Daily Attendance Entry")
+
+with st.expander("Mark Attendance"):
+
+    roll_no = st.text_input("Roll Number")
+
+    student_name = st.text_input("Student Name")
+
+    status = st.selectbox(
+        "Status",
+        ["Present", "Absent"]
+    )
+
+    if st.button("Save Attendance"):
+
+        today = pd.Timestamp.now().date()
+
+        new_record = pd.DataFrame({
+            "Date":[today],
+            "Roll No":[roll_no],
+            "Student Name":[student_name],
+            "Status":[status]
+        })
+
+        if os.path.exists("attendance_records.csv"):
+
+            old_data = pd.read_csv(
+                "attendance_records.csv"
+            )
+
+            old_data = pd.concat(
+                [old_data,new_record],
+                ignore_index=True
+            )
+
+            old_data.to_csv(
+                "attendance_records.csv",
+                index=False
+            )
+
+        else:
+
+            new_record.to_csv(
+                "attendance_records.csv",
+                index=False
+            )
+
+        st.success(
+            "Attendance Saved Successfully"
+        )
 
 # =====================================================
 # FILE UPLOAD
 # =====================================================
 
+st.subheader("📂 Upload Attendance File")
+
 uploaded_file = st.file_uploader(
-    "📂 Upload Attendance Sheet",
+    "Upload CSV or Excel",
     type=["csv","xlsx"]
 )
 
 # =====================================================
-# LOAD FILE
+# LOAD DATA
 # =====================================================
 
-def load_file(file):
+def load_data(file):
 
     if file.name.endswith(".csv"):
         return pd.read_csv(file)
@@ -134,79 +188,54 @@ def calculate_attendance(df):
     return result
 
 # =====================================================
-# GEMINI ANALYSIS
+# AI REPORT
 # =====================================================
 
-def ai_analysis(summary):
+def generate_report(summary):
 
     prompt = f"""
+You are an attendance analyst.
 
-You are an AI Attendance Analyst.
-
-Analyze the attendance data.
+Analyze this attendance data.
 
 Generate:
 
-1. Executive Summary
-
-2. Attendance Overview Table
-
-3. Students Below 75%
-
-4. Students Below 60%
-
-5. Attendance Risk Classification
-
-Categories:
-- Safe
-- Moderate Risk
-- High Risk
-
-6. Possible Causes of Low Attendance
-
-7. Student Engagement Insights
-
-8. Faculty Recommendations
-
-9. Parent Communication Suggestions
-
-10. Smart Intervention Plan
-
-11. Attendance Improvement Strategies
-
-12. Motivational Quote
+1. Attendance Summary
+2. Students Below 75%
+3. Students Below 60%
+4. High Risk Students
+5. Faculty Recommendations
+6. Improvement Suggestions
+7. Motivational Quote
 
 Attendance Data:
 
 {summary}
-
-Return professional report.
 """
 
-    try:
+    model = genai.GenerativeModel(
+        "gemini-2.5-flash"
+    )
 
-        model = genai.GenerativeModel(
-            "gemini-2.5-flash"
-        )
+    response = model.generate_content(
+        prompt
+    )
 
-        response = model.generate_content(prompt)
-
-        return response.text
-
-    except Exception as e:
-        return f"AI Error: {e}"
+    return response.text
 
 # =====================================================
-# MAIN APP
+# MAIN
 # =====================================================
 
 if uploaded_file:
 
-    df = load_file(uploaded_file)
+    df = load_data(uploaded_file)
 
-    st.success("✅ Attendance File Uploaded Successfully")
+    st.success(
+        "Attendance File Uploaded"
+    )
 
-    st.subheader("📋 Raw Attendance Data")
+    st.subheader("📋 Attendance Data")
 
     st.dataframe(df)
 
@@ -218,16 +247,21 @@ if uploaded_file:
 
     # Metrics
 
-    total_students = len(attendance_summary)
+    total_students = len(
+        attendance_summary
+    )
 
     avg_attendance = (
-        attendance_summary["Attendance %"]
-        .mean()
+        attendance_summary[
+            "Attendance %"
+        ].mean()
     )
 
     low_students = len(
         attendance_summary[
-            attendance_summary["Attendance %"] < 75
+            attendance_summary[
+                "Attendance %"
+            ] < 75
         ]
     )
 
@@ -244,23 +278,31 @@ if uploaded_file:
     )
 
     c3.metric(
-        "Low Attendance",
+        "Below 75%",
         low_students
     )
 
     # Risk Students
 
-    st.subheader("⚠️ At-Risk Students")
+    st.subheader(
+        "⚠️ Risk Students"
+    )
 
     risk_students = attendance_summary[
-        attendance_summary["Attendance %"] < 75
+        attendance_summary[
+            "Attendance %"
+        ] < 75
     ]
 
-    st.dataframe(risk_students)
+    st.dataframe(
+        risk_students
+    )
 
     # Chart
 
-    st.subheader("📈 Attendance Visualization")
+    st.subheader(
+        "📈 Attendance Chart"
+    )
 
     fig = px.bar(
         attendance_summary,
@@ -274,22 +316,124 @@ if uploaded_file:
         use_container_width=True
     )
 
-    # AI Analysis
+    # =================================================
+    # AI PARENT ALERT
+    # =================================================
 
-    st.subheader("🤖 AI Attendance Intelligence Report")
+    st.subheader(
+        "📨 AI Parent Alert Generator"
+    )
 
-    with st.spinner(
-        "Analyzing attendance using Gemini AI..."
+    selected_student = st.selectbox(
+        "Select Student",
+        attendance_summary[
+            "Student Name"
+        ]
+    )
+
+    if st.button(
+        "Generate Parent Message"
     ):
 
-        report = ai_analysis(
+        attendance = attendance_summary[
+            attendance_summary[
+                "Student Name"
+            ] == selected_student
+        ]["Attendance %"].values[0]
+
+        prompt = f"""
+Generate a formal parent message.
+
+Student:
+{selected_student}
+
+Attendance:
+{attendance:.2f}%
+
+Mention:
+- Low attendance
+- Exam eligibility concern
+- Request support
+"""
+
+        model = genai.GenerativeModel(
+            "gemini-2.5-flash"
+        )
+
+        response = model.generate_content(
+            prompt
+        )
+
+        st.success(
+            "Message Generated"
+        )
+
+        st.write(
+            response.text
+        )
+
+    # =================================================
+    # AI REPORT
+    # =================================================
+
+    st.subheader(
+        "🤖 AI Attendance Report"
+    )
+
+    with st.spinner(
+        "Generating AI Report..."
+    ):
+
+        report = generate_report(
             attendance_summary.to_string()
         )
 
     st.markdown(report)
 
+    # =================================================
+    # ATTENDANCE GPT
+    # =================================================
+
+    st.subheader(
+        "💬 AttendanceGPT"
+    )
+
+    question = st.chat_input(
+        "Ask about attendance..."
+    )
+
+    if question:
+
+        prompt = f"""
+You are an AI Attendance Assistant.
+
+Attendance Data:
+
+{attendance_summary.to_string()}
+
+Question:
+
+{question}
+
+Answer professionally.
+"""
+
+        model = genai.GenerativeModel(
+            "gemini-2.5-flash"
+        )
+
+        response = model.generate_content(
+            prompt
+        )
+
+        with st.chat_message("user"):
+            st.write(question)
+
+        with st.chat_message("assistant"):
+            st.write(response.text)
+
     st.success(
-        "🎉 Attendance Analysis Completed"
+        "Analysis Complete"
     )
 
     st.balloons()
@@ -297,5 +441,5 @@ if uploaded_file:
 else:
 
     st.info(
-        "Upload a CSV or Excel attendance sheet to begin."
+        "Upload an attendance Excel/CSV file to begin."
     )
