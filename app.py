@@ -8,7 +8,7 @@ import os
 # GEMINI API KEY
 # =====================================================
 
-GEMINI_API_KEY = "AQ.Ab8RN6IcBeRCgc9wFdvZ38zgqfwSldBNZCghxjs8AS2gCSGfWA"
+GEMINI_API_KEY = "AQ.Ab8RN6LvPCU5qO3yQv5gEGyiHV1L1NV-CLB3H-lCCVuhh5P4Yw"
 
 genai.configure(api_key=GEMINI_API_KEY)
 
