@@ -27,15 +27,50 @@ st.set_page_config(
 # =====================================================
 
 st.markdown("""
+# =====================================================
+# CUSTOM CSS
+# =====================================================
+
+st.markdown("""
 <style>
 
-.stApp{
-    background-color:#eef7ff;
+.stApp {
+    background-color: #eef7ff;
 }
 
-.title{
-    text-align:center;
-    color:#003366;
+/* Main text */
+html, body, [class*="css"] {
+    color: #000000 !important;
+}
+
+/* Headers */
+h1, h2, h3, h4, h5, h6 {
+    color: #003366 !important;
+}
+
+/* Markdown text */
+p, li {
+    color: #000000 !important;
+}
+
+/* DataFrames */
+table {
+    color: black !important;
+}
+
+/* Chat input */
+[data-testid="stChatInput"] textarea {
+    color: black !important;
+}
+
+/* Text inputs */
+input {
+    color: black !important;
+}
+
+/* Select boxes */
+div[data-baseweb="select"] {
+    color: black !important;
 }
 
 </style>
